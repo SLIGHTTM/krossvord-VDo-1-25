@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Кроссворд: Кыргызстан в эпоху средневековья (VI-XV вв.)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #f3f4f6;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .crossword-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: auto;
+            padding-bottom: 1rem;
+        }
+
+        .crossword-board {
+            display: grid;
+            grid-template-columns: repeat(12, 40px);
+            grid-template-rows: repeat(11, 40px);
+            gap: 1px;
+            background: #1e3a8a; /* Deep blue borders */
+            border: 2px solid #1e3a8a;
+            border-radius: 4px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            width: max-content;
+        }
+
+        @media (min-width: 768px) {
+            .crossword-board {
+                grid-template-columns: repeat(12, 45px);
+                grid-template-rows: repeat(11, 45px);
+            }
+        }
+
+        .cell {
+            background: transparent;
+            position: relative;
+        }
+
+        .cell.active {
+            background: #ffffff;
+        }
+
+        .cell input {
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            text-transform: uppercase;
+            font-size: 1.25rem;
+            font-weight: 600;
+            border: none;
+            outline: none;
+            background: transparent;
+            cursor: pointer;
+            color: #1f2937;
+            padding: 0;
+            margin: 0;
+            transition: background-color 0.2s;
+        }
+
+        .cell.active input:focus {
+            background: #dbeafe; /* Light blue focus */
+        }
+
+        .cell.highlight input {
+            background: #fef08a !important; /* Yellow highlight for active word */
+        }
+        
+        .cell.highlight-focus input {
+            background: #fde047 !important; /* Darker yellow for current cell */
+        }
+
+        .cell .number {
+            position: absolute;
+            top: 2px;
+            left: 3px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            line-height: 1;
+            color: #4b5563;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .cell.correct input { 
+            background-color: #bbf7d0 !important; 
+            color: #166534; 
+        }
+        
+        .cell.incorrect input { 
+            background-color: #fecaca !important; 
+            color: #991b1b; 
+        }
+
+        .clue-item {
+            cursor: pointer;
+            transition: all 0.2s;
+            border-left: 4px solid transparent;
+        }
+
+        .clue-item:hover {
+            background-color: #f3f4f6;
+        }
+
+        .clue-item.active-clue {
+            background-color: #eff6ff;
+            border-left-color: #3b82f6;
+        }
+
+        .clue-number {
+            font-weight: bold;
+            color: #1d4ed8;
+            margin-right: 0.5rem;
+        }
+    </style>
+</head>
+<body class="text-gray-800 antialiased min-h-screen flex flex-col">
+
+    <!-- Header Section -->
+    <header class="bg-blue-900 text-white shadow-lg pt-8 pb-6 px-4">
+        <div class="max-w-5xl mx-auto">
+            <h1 class="text-3xl md:text-4xl font-extrabold text-center mb-4 text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-white">
+                Кыргызстан в эпоху раннего и позднего средневековья (VI-XV вв.)
+            </h1>
+            <div class="bg-blue-800 bg-opacity-50 rounded-lg p-4 mt-6 text-center max-w-2xl mx-auto border border-blue-700">
+                <p class="text-blue-200 uppercase tracking-widest text-sm font-semibold mb-1">Специально для группы ВДо 1-25</p>
+                <div class="flex flex-col md:flex-row justify-center items-center gap-2 md:gap-6 mt-2">
+                    <p class="font-medium"><span class="text-blue-300 font-normal">Студентка:</span> Тургунбаева Мундуз</p>
+                    <div class="hidden md:block w-1 h-1 bg-blue-400 rounded-full"></div>
+                    <p class="font-medium"><span class="text-blue-300 font-normal">Преподаватель:</span> Анара Исаева</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow container mx-auto px-4 py-8 max-w-6xl flex flex-col lg:flex-row gap-8">
+        
+        <!-- Crossword Grid Section -->
+        <section class="lg:w-7/12 bg-white rounded-xl shadow-md p-4 md:p-6 border border-gray-100 flex flex-col">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">Интерактивный Кроссворд</h2>
+            
+            <div class="crossword-container">
+                <div id="board" class="crossword-board"></div>
+            </div>
+
+            <div class="mt-8 flex justify-center gap-4">
+                <button id="btn-check" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition transform hover:-translate-y-0.5">
+                    Проверить ответы
+                </button>
+                <button id="btn-reveal" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 px-6 rounded-lg transition">
+                    Показать решение
+                </button>
+            </div>
+            <div id="message-container" class="mt-4 text-center font-bold text-lg hidden"></div>
+        </section>
+
+        <!-- Clues Section -->
+        <section class="lg:w-5/12 bg-white rounded-xl shadow-md p-4 md:p-6 border border-gray-100 flex flex-col max-h-[800px] overflow-y-auto">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">Вопросы</h2>
+            
+            <div class="grid grid-cols-1 gap-6">
+                <!-- Horizontal Clues -->
+                <div>
+                    <h3 class="text-xl font-bold text-blue-900 mb-3 flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                        По горизонтали
+                    </h3>
+                    <ul id="clues-horizontal" class="space-y-2"></ul>
+                </div>
+
+                <!-- Vertical Clues -->
+                <div>
+                    <h3 class="text-xl font-bold text-blue-900 mb-3 flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
+                        По вертикали
+                    </h3>
+                    <ul id="clues-vertical" class="space-y-2"></ul>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Data derived strictly from Лекция 4.docx
+        const wordsData = [
+            { word: "ИСЛАМ", clue: "Религия, объявленная государственной Мусой в Караханидском каганате (960 г.).", x: 5, y: 1, dir: "v" },
+            { word: "КАРЛУКИ", clue: "Тюркские племена, захватившие власть в Тюргешском каганате и сыгравшие решающую роль в битве у Атлаха (751 г.).", x: 6, y: 1, dir: "v" },
+            { word: "ТЮРК", clue: "Термин, означающий «сильный, крепкий» или «место, где собирается племя».", x: 7, y: 2, dir: "h" },
+            { word: "КАГАН", clue: "Вождь, верховный судья и верховный жрец в древнетюркском обществе.", x: 10, y: 2, dir: "v" },
+            { word: "БАЛАСАГЫН", clue: "Столица государства Караханидов, где была написана поэма «Кутадгу билиг».", x: 4, y: 4, dir: "h" },
+            { word: "БАЛБАЛ", clue: "Каменные изваяния, которые устанавливали древние тюрки-кочевники.", x: 4, y: 4, dir: "v" },
+            { word: "АШИНА", clue: "Знатный род, название которого означает «достойный, благородный или синий, небесный».", x: 9, y: 4, dir: "v" },
+            { word: "СУЯБ", clue: "С 618 г. этот город был административно-политическим центром Западно-Тюркского каганата.", x: 1, y: 7, dir: "h" },
+            { word: "УЗГЕН", clue: "Вторая (южная) столица государства Караханидов.", x: 2, y: 7, dir: "v" },
+            { word: "БУРАНА", clue: "Знаменитая архитектурная башня XI века, сохранившаяся на месте древнего города Баласагын.", x: 6, y: 8, dir: "h" }
+        ];
+
+        const COLS = 12;
+        const ROWS = 11;
+        
+        let grid = [];
+        let activeWord = null;
+        let activeCell = null;
+
+        // Initialize grid
+        for (let y = 0; y < ROWS; y++) {
+            grid[y] = [];
+            for (let x = 0; x < COLS; x++) {
+                grid[y][x] = { active: false, letter: '', number: null, words: [] };
+            }
+        }
+
+        // Process words and populate grid
+        let numberCounter = 1;
+        // Sort to assign numbers top-to-bottom, left-to-right
+        const sortedWords = [...wordsData].sort((a, b) => (a.y === b.y) ? a.x - b.x : a.y - b.y);
+
+        sortedWords.forEach((item) => {
+            const startX = item.x - 1;
+            const startY = item.y - 1;
+
+            // Assign number if cell doesn't have one
+            if (!grid[startY][startX].number) {
+                grid[startY][startX].number = numberCounter++;
+            }
+            item.number = grid[startY][startX].number;
+
+            // Place letters
+            for (let i = 0; i < item.word.length; i++) {
+                let currX = startX + (item.dir === 'h' ? i : 0);
+                let currY = startY + (item.dir === 'v' ? i : 0);
+                
+                grid[currY][currX].active = true;
+                grid[currY][currX].letter = item.word[i];
+                grid[currY][currX].words.push(item);
+            }
+        });
+
+        const boardEl = document.getElementById('board');
+        const cluesHorizontalEl = document.getElementById('clues-horizontal');
+        const cluesVerticalEl = document.getElementById('clues-vertical');
+        
+        // Render Board
+        for (let y = 0; y < ROWS; y++) {
+            for (let x = 0; x < COLS; x++) {
+                const cellData = grid[y][x];
+                const cellEl = document.createElement('div');
+                cellEl.className = 'cell' + (cellData.active ? ' active' : '');
+                cellEl.dataset.x = x;
+                cellEl.dataset.y = y;
+
+                if (cellData.active) {
+                    if (cellData.number) {
+                        const numEl = document.createElement('div');
+                        numEl.className = 'number';
+                        numEl.textContent = cellData.number;
+                        cellEl.appendChild(numEl);
+                    }
+
+                    const inputEl = document.createElement('input');
+                    inputEl.type = 'text';
+                    inputEl.maxLength = 1;
+                    inputEl.dataset.x = x;
+                    inputEl.dataset.y = y;
+                    
+                    // Interaction logic
+                    inputEl.addEventListener('focus', () => handleCellFocus(x, y));
+                    inputEl.addEventListener('input', (e) => handleInput(e, x, y));
+                    inputEl.addEventListener('keydown', (e) => handleKeydown(e, x, y));
+                    inputEl.addEventListener('click', () => handleCellClick(x, y));
+
+                    cellEl.appendChild(inputEl);
+                }
+                boardEl.appendChild(cellEl);
+            }
+        }
+
+        // Render Clues
+        wordsData.sort((a,b) => a.number - b.number).forEach(item => {
+            const li = document.createElement('li');
+            li.className = 'clue-item rounded p-2 text-sm md:text-base text-gray-700';
+            li.id = `clue-${item.word}`;
+            li.innerHTML = `<span class="clue-number">${item.number}.</span> ${item.clue}`;
+            li.addEventListener('click', () => selectWord(item));
+
+            if (item.dir === 'h') {
+                cluesHorizontalEl.appendChild(li);
+            } else {
+                cluesVerticalEl.appendChild(li);
+            }
+        });
+
+        function getCellElement(x, y) {
+            return boardEl.querySelector(`.cell[data-x="${x}"][data-y="${y}"]`);
+        }
+
+        function getInput(x, y) {
+            return boardEl.querySelector(`input[data-x="${x}"][data-y="${y}"]`);
+        }
+
+        function handleCellFocus(x, y) {
+            const cell = grid[y][x];
+            activeCell = {x, y};
+            
+            if (!activeWord || !cell.words.includes(activeWord)) {
+                activeWord = cell.words[0];
+            }
+            highlightActiveWord();
+        }
+
+        function handleCellClick(x, y) {
+            const cell = grid[y][x];
+            // Toggle direction if cell belongs to two words and clicked again
+            if (cell.words.length > 1 && activeWord === cell.words[0]) {
+                activeWord = cell.words[1];
+            } else if (cell.words.length > 1 && activeWord === cell.words[1]) {
+                activeWord = cell.words[0];
+            } else {
+                activeWord = cell.words[0];
+            }
+            highlightActiveWord();
+        }
+
+        function selectWord(wordItem) {
+            activeWord = wordItem;
+            const startX = wordItem.x - 1;
+            const startY = wordItem.y - 1;
+            getInput(startX, startY).focus();
+            highlightActiveWord();
+        }
+
+        function highlightActiveWord() {
+            // Remove all highlights
+            document.querySelectorAll('.cell.highlight').forEach(el => el.classList.remove('highlight', 'highlight-focus'));
+            document.querySelectorAll('.clue-item.active-clue').forEach(el => el.classList.remove('active-clue'));
+
+            if (!activeWord) return;
+
+            // Highlight word path in grid
+            const startX = activeWord.x - 1;
+            const startY = activeWord.y - 1;
+            for (let i = 0; i < activeWord.word.length; i++) {
+                let cx = startX + (activeWord.dir === 'h' ? i : 0);
+                let cy = startY + (activeWord.dir === 'v' ? i : 0);
+                const el = getCellElement(cx, cy);
+                if (el) {
+                    el.classList.add('highlight');
+                    if (activeCell && activeCell.x === cx && activeCell.y === cy) {
+                        el.classList.add('highlight-focus');
+                    }
+                }
+            }
+
+            // Highlight clue
+            const clueEl = document.getElementById(`clue-${activeWord.word}`);
+            if (clueEl) {
+                clueEl.classList.add('active-clue');
+                clueEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+
+        function handleInput(e, x, y) {
+            const input = e.target;
+            const val = input.value.toUpperCase();
+            
+            // Allow only cyrillic and basic latin (though answer is cyrillic)
+            if (!/^[А-ЯЁA-Z]*$/.test(val)) {
+                input.value = '';
+                return;
+            }
+            input.value = val;
+
+            // Remove verification styling when typing
+            getCellElement(x, y).classList.remove('correct', 'incorrect');
+
+            if (val && activeWord) {
+                // Advance focus
+                advanceFocus(x, y, 1);
+            }
+        }
+
+        function handleKeydown(e, x, y) {
+            if (e.key === 'Backspace' && !e.target.value) {
+                advanceFocus(x, y, -1);
+            } else if (e.key === 'ArrowRight') {
+                moveFocus(x + 1, y);
+            } else if (e.key === 'ArrowLeft') {
+                moveFocus(x - 1, y);
+            } else if (e.key === 'ArrowDown') {
+                moveFocus(x, y + 1);
+            } else if (e.key === 'ArrowUp') {
+                moveFocus(x, y - 1);
+            }
+        }
+
+        function advanceFocus(cx, cy, step) {
+            if (!activeWord) return;
+            const isHoriz = activeWord.dir === 'h';
+            let nx = cx + (isHoriz ? step : 0);
+            let ny = cy + (isHoriz ? 0 : step);
+            
+            // Check if next cell is part of the active word
+            const startX = activeWord.x - 1;
+            const startY = activeWord.y - 1;
+            const endX = startX + (isHoriz ? activeWord.word.length - 1 : 0);
+            const endY = startY + (isHoriz ? 0 : activeWord.word.length - 1);
+
+            if (nx >= startX && nx <= endX && ny >= startY && ny <= endY) {
+                const nextInput = getInput(nx, ny);
+                if (nextInput) nextInput.focus();
+            }
+        }
+
+        function moveFocus(x, y) {
+            if (x >= 0 && x < COLS && y >= 0 && y < ROWS && grid[y][x].active) {
+                getInput(x, y).focus();
+            }
+        }
+
+        // Checking logic
+        document.getElementById('btn-check').addEventListener('click', () => {
+            let allCorrect = true;
+            let filledCount = 0;
+            let totalActive = 0;
+
+            for (let y = 0; y < ROWS; y++) {
+                for (let x = 0; x < COLS; x++) {
+                    if (grid[y][x].active) {
+                        totalActive++;
+                        const cellEl = getCellElement(x, y);
+                        const input = getInput(x, y);
+                        const userLetter = input.value.toUpperCase();
+                        const correctLetter = grid[y][x].letter;
+
+                        cellEl.classList.remove('correct', 'incorrect');
+
+                        if (userLetter) {
+                            filledCount++;
+                            if (userLetter === correctLetter) {
+                                cellEl.classList.add('correct');
+                            } else {
+                                cellEl.classList.add('incorrect');
+                                allCorrect = false;
+                            }
+                        } else {
+                            allCorrect = false;
+                        }
+                    }
+                }
+            }
+
+            const msgCont = document.getElementById('message-container');
+            msgCont.classList.remove('hidden', 'text-green-600', 'text-red-600', 'text-yellow-600');
+            
+            if (filledCount === 0) {
+                msgCont.textContent = "Вы еще ничего не заполнили!";
+                msgCont.classList.add('text-yellow-600');
+            } else if (allCorrect && filledCount === totalActive) {
+                msgCont.textContent = "Поздравляем! Кроссворд решен абсолютно верно! Отличная работа!";
+                msgCont.classList.add('text-green-600');
+            } else {
+                msgCont.textContent = "Есть ошибки или незаполненные клетки. Проверьте красные поля.";
+                msgCont.classList.add('text-red-600');
+            }
+        });
+
+        // Reveal logic
+        document.getElementById('btn-reveal').addEventListener('click', () => {
+            if(confirm("Вы уверены, что хотите показать правильные ответы?")) {
+                for (let y = 0; y < ROWS; y++) {
+                    for (let x = 0; x < COLS; x++) {
+                        if (grid[y][x].active) {
+                            const input = getInput(x, y);
+                            const cellEl = getCellElement(x, y);
+                            input.value = grid[y][x].letter;
+                            cellEl.classList.remove('incorrect');
+                            cellEl.classList.add('correct');
+                        }
+                    }
+                }
+                const msgCont = document.getElementById('message-container');
+                msgCont.textContent = "Решение показано.";
+                msgCont.className = "mt-4 text-center font-bold text-lg text-blue-600 block";
+            }
+        });
+
+    </script>
+</body>
+</html>
